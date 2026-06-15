@@ -27,6 +27,7 @@ CATEGORICAL_FEATURES = []
 
 MLFLOW_EXPERIMENT = "ag-news-classification"
 MODEL_NAME = "ag-news-classifier"
+MLFLOW_TRACKING_URI = "http://127.0.0.1:5000"
 
 # Multiclasse 4 classes : World=0, Sports=1, Business=2, Sci/Tech=3
 N_CLASSES = 4
