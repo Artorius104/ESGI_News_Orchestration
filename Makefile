@@ -11,7 +11,7 @@ SHELL        := /bin/sh
 PYTHON       := uv run python
 RUN          := uv run
 VENV_DIR     := .venv
-PYTHONPATH   ?= .
+PYTHONPATH   ?= src
 export PYTHONPATH
 API_HOST     ?= 127.0.0.1
 API_PORT     ?= 8000
