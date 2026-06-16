@@ -1,14 +1,18 @@
+from __future__ import annotations
+
+import os
 from pathlib import Path
 
+from dotenv import load_dotenv
+
 ROOT = Path(__file__).resolve().parents[2]
+load_dotenv(ROOT / ".env")
 
-# TODO (S0-1)
 DATA_PATH = ROOT / "data" / "dataset.csv"
+MODEL_DIR = ROOT / "models"
 
-# TODO (S0-2)
 TARGET = "label"
 
-# TODO (S0-3)
 NUMERIC_FEATURES = [
     "title_word_count",
     "title_char_count",
@@ -22,13 +26,13 @@ NUMERIC_FEATURES = [
     "upper_ratio_title",
 ]
 
-# TODO (S0-4)
-CATEGORICAL_FEATURES = []
+CATEGORICAL_FEATURES: list[str] = []
 
-MLFLOW_EXPERIMENT = "ag-news-classification"
-MODEL_NAME = "ag-news-classifier"
-MLFLOW_TRACKING_URI = "http://127.0.0.1:5000"
+RANDOM_STATE = 42
 
-# Multiclasse 4 classes : World=0, Sports=1, Business=2, Sci/Tech=3
+MLFLOW_TRACKING_URI = os.getenv("MLFLOW_TRACKING_URI", "http://127.0.0.1:5000")
+MLFLOW_EXPERIMENT = os.getenv("MLFLOW_EXPERIMENT", "ag-news-classification")
+MODEL_NAME = os.getenv("MODEL_NAME", "ag-news-classifier")
+
 N_CLASSES = 4
 SCORING = "roc_auc_ovr"
