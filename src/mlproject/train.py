@@ -9,14 +9,10 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import ConfusionMatrixDisplay, f1_score, roc_auc_score
 from sklearn.pipeline import Pipeline
 
-from mlproject.config import (
-    MLFLOW_EXPERIMENT,
-    MLFLOW_TRACKING_URI,
-    MODEL_DIR,
-    MODEL_NAME,
-)
+from mlproject.config import MODEL_DIR, MODEL_NAME, TRAIN_PATH
 from mlproject.data import load_data, split
 from mlproject.features import build_preprocessor
+from mlproject.tracking import log_dataset, setup_experiment
 
 
 def train(c: float = 1.0, max_iter: int = 1000) -> dict[str, float]:
@@ -28,10 +24,10 @@ def train(c: float = 1.0, max_iter: int = 1000) -> dict[str, float]:
         ("clf", LogisticRegression(C=c, max_iter=max_iter)),
     ])
 
-    mlflow.set_tracking_uri(MLFLOW_TRACKING_URI)
-    mlflow.set_experiment(MLFLOW_EXPERIMENT)
+    setup_experiment()
 
     with mlflow.start_run(run_name=f"logreg-c{c}"):
+        log_dataset(train_df, context="training", name="train", source=TRAIN_PATH)
         model.fit(X_train, y_train)
 
         y_pred = model.predict(X_test)

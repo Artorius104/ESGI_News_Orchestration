@@ -37,17 +37,11 @@ from sklearn.model_selection import cross_val_score
 from sklearn.pipeline import Pipeline
 from xgboost import XGBClassifier
 
-from mlproject.config import (
-    MLFLOW_EXPERIMENT,
-    MLFLOW_TRACKING_URI,
-    MODEL_DIR,
-    MODEL_NAME,
-    RANDOM_STATE,
-    SCORING,
-)
+from mlproject.config import MODEL_DIR, MODEL_NAME, RANDOM_STATE, SCORING, TEST_PATH, TRAIN_PATH
 from mlproject.data import load_data, split
 from mlproject.evaluation import log_shap_summary
 from mlproject.features import build_preprocessor
+from mlproject.tracking import log_dataset, setup_experiment
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 logger = logging.getLogger(__name__)
@@ -254,9 +248,7 @@ def optimize(n_trials: int = 30, cv: int = 5, use_mlflow: bool = True) -> list[F
     x_train, x_test, y_train, y_test = split(train_df, test_df)
 
     if use_mlflow:
-        mlflow.set_tracking_uri(MLFLOW_TRACKING_URI)
-        mlflow.set_experiment(MLFLOW_EXPERIMENT)
-        logger.info("Suivi MLflow : %s (experience: %s)", MLFLOW_TRACKING_URI, MLFLOW_EXPERIMENT)
+        setup_experiment()
 
     results = [
         optimize_family(spec, x_train, y_train, x_test, y_test, n_trials=n_trials, cv=cv)
@@ -269,6 +261,8 @@ def optimize(n_trials: int = 30, cv: int = 5, use_mlflow: bool = True) -> list[F
 
     if use_mlflow:
         with mlflow.start_run(run_name="optuna-compare"):
+            log_dataset(train_df, context="training", name="train", source=TRAIN_PATH)
+            log_dataset(test_df, context="evaluation", name="test", source=TEST_PATH)
             mlflow.log_param("n_trials", n_trials)
             mlflow.log_param("cv", cv)
             mlflow.set_tag("best_model", best.spec.name)
