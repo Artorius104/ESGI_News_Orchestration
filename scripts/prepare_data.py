@@ -13,10 +13,11 @@ import pandas as pd
 logging.basicConfig(level=logging.INFO, format="%(message)s")
 log = logging.getLogger(__name__)
 
-ROOT       = Path(__file__).resolve().parents[1]
-TRAIN_PATH = ROOT / "data" / "train.csv"
-TEST_PATH  = ROOT / "data" / "test.csv"
-OUT_PATH   = ROOT / "data" / "dataset.csv"
+ROOT              = Path(__file__).resolve().parents[1]
+TRAIN_PATH        = ROOT / "data" / "train.csv"
+TEST_PATH         = ROOT / "data" / "test.csv"
+TRAIN_FEATURES    = ROOT / "data" / "train_features.csv"
+TEST_FEATURES     = ROOT / "data" / "test_features.csv"
 
 LABEL_MAP = {1: 0, 2: 1, 3: 2, 4: 3}
 
@@ -49,18 +50,20 @@ def extract_features(df: pd.DataFrame) -> pd.DataFrame:
 
 def main() -> None:
     log.info("Chargement des données brutes...")
-    train = pd.read_csv(TRAIN_PATH)
-    test  = pd.read_csv(TEST_PATH)
-    df    = pd.concat([train, test], ignore_index=True)
-    log.info("%d lignes chargées", len(df))
+    train_raw = pd.read_csv(TRAIN_PATH)
+    test_raw  = pd.read_csv(TEST_PATH)
+    log.info("train : %d lignes | test : %d lignes", len(train_raw), len(test_raw))
 
-    out = extract_features(df)
+    train_out = extract_features(train_raw)
+    test_out  = extract_features(test_raw)
 
-    log.info("Distribution des labels :\n%s", out["label"].value_counts().sort_index().to_string())
+    log.info("Distribution des labels (train) :\n%s", train_out["label"].value_counts().sort_index().to_string())
 
-    OUT_PATH.parent.mkdir(parents=True, exist_ok=True)
-    out.to_csv(OUT_PATH, index=False)
-    log.info("Sauvegardé → %s  (%d lignes, %d colonnes)", OUT_PATH, len(out), out.shape[1])
+    TRAIN_FEATURES.parent.mkdir(parents=True, exist_ok=True)
+    train_out.to_csv(TRAIN_FEATURES, index=False)
+    test_out.to_csv(TEST_FEATURES, index=False)
+    log.info("Sauvegardé → %s  (%d lignes)", TRAIN_FEATURES, len(train_out))
+    log.info("Sauvegardé → %s  (%d lignes)", TEST_FEATURES, len(test_out))
 
 
 if __name__ == "__main__":

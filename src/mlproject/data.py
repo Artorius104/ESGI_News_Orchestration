@@ -1,16 +1,19 @@
 from __future__ import annotations
 
 import pandas as pd
-from sklearn.model_selection import train_test_split
 
-from mlproject.config import DATA_PATH, RANDOM_STATE, TARGET
-
-
-def load_data(path=DATA_PATH) -> pd.DataFrame:
-    return pd.read_csv(path)
+from mlproject.config import TARGET, TEST_PATH, TRAIN_PATH
 
 
-def split(df: pd.DataFrame, test_size: float = 0.2):
-    X = df.drop(columns=[TARGET])
-    y = df[TARGET]
-    return train_test_split(X, y, test_size=test_size, stratify=y, random_state=RANDOM_STATE)
+def load_data() -> tuple[pd.DataFrame, pd.DataFrame]:
+    return pd.read_csv(TRAIN_PATH), pd.read_csv(TEST_PATH)
+
+
+def split(
+    train_df: pd.DataFrame, test_df: pd.DataFrame
+) -> tuple[pd.DataFrame, pd.DataFrame, pd.Series, pd.Series]:
+    X_train = train_df.drop(columns=[TARGET])
+    y_train = train_df[TARGET]
+    X_test  = test_df.drop(columns=[TARGET])
+    y_test  = test_df[TARGET]
+    return X_train, X_test, y_train, y_test

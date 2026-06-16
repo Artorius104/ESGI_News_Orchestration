@@ -100,8 +100,8 @@ doctor: check-uv check-venv ## Diagnostique l'environnement de travail
 # Pipeline ML  [A COMPLETER]
 # ==============================================================================
 
-data: ## Prepare/genere le jeu de donnees dans data/
-	# TODO (S0) : appeler votre script de preparation de donnees
+data: ## Prepare/genere train_features.csv et test_features.csv dans data/
+	$(PYTHON) scripts/prepare_data.py
 
 train: ## Entraine la baseline -> models/model.joblib (C=.. MAX_ITER=..)
 	$(PYTHON) -m mlproject.train --c $(C) --max-iter $(MAX_ITER)

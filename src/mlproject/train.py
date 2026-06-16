@@ -20,8 +20,8 @@ from mlproject.features import build_preprocessor
 
 
 def train(c: float = 1.0, max_iter: int = 1000) -> dict[str, float]:
-    df = load_data()
-    X_train, X_test, y_train, y_test = split(df)
+    train_df, test_df = load_data()
+    X_train, X_test, y_train, y_test = split(train_df, test_df)
 
     model = Pipeline([
         ("preprocessor", build_preprocessor()),

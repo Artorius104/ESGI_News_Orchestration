@@ -8,8 +8,9 @@ from dotenv import load_dotenv
 ROOT = Path(__file__).resolve().parents[2]
 load_dotenv(ROOT / ".env")
 
-DATA_PATH = ROOT / "data" / "dataset.csv"
-MODEL_DIR = ROOT / "models"
+TRAIN_PATH = ROOT / "data" / "train_features.csv"
+TEST_PATH  = ROOT / "data" / "test_features.csv"
+MODEL_DIR  = ROOT / "models"
 
 TARGET = "label"
 

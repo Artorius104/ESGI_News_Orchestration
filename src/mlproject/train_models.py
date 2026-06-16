@@ -225,8 +225,8 @@ def train_all(
     scoring: str = SCORING,
     use_mlflow: bool = True,
 ) -> list[FitResult]:
-    df = load_data()
-    x_train, x_test, y_train, y_test = split(df)
+    train_df, test_df = load_data()
+    x_train, x_test, y_train, y_test = split(train_df, test_df)
 
     if use_mlflow:
         mlflow.set_tracking_uri(MLFLOW_TRACKING_URI)
