@@ -192,6 +192,15 @@ def log_run_to_mlflow(
             signature=signature,
             input_example=x_test.iloc[:5],
             registered_model_name=register_as,
+            # XGBoost et LightGBM (et son OrderedDict interne) ne sont pas types de
+            # confiance par defaut pour la (de)serialisation skops de MLflow >=3.
+            skops_trusted_types=[
+                "collections.OrderedDict",
+                "xgboost.core.Booster",
+                "xgboost.sklearn.XGBClassifier",
+                "lightgbm.basic.Booster",
+                "lightgbm.sklearn.LGBMClassifier",
+            ],
         )
 
         if register_as and model_info.registered_model_version is not None:

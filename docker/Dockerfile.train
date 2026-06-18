@@ -1,0 +1,22 @@
+# Image de production de l'entrainement (src/mlproject/train_models.py).
+# Le modele et les donnees ne sont pas embarques dans l'image : ils sont
+# montes en volume au runtime (donnees en lecture seule, modeles en ecriture).
+#
+# Build : docker build -f docker/Dockerfile.train -t mlproject-train .
+# Run   : docker run --rm -e MLFLOW_TRACKING_URI=http://localhost:5000 \
+#           -v "$PWD/data:/app/data:ro" -v "$PWD/models:/app/models" \
+#           mlproject-train --cv 3
+
+FROM python:3.13-slim
+ENV PYTHONUNBUFFERED=1 PYTHONPATH=/app/src
+WORKDIR /app
+
+# libgomp1 : runtime OpenMP requis pour entrainer/deserialiser un modele LightGBM
+RUN apt-get update && apt-get install -y --no-install-recommends libgomp1 \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY pyproject.toml ./
+COPY src/ ./src/
+RUN pip install --no-cache-dir .
+
+ENTRYPOINT ["python", "-m", "mlproject.train_models"]

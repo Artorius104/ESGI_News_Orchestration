@@ -18,6 +18,7 @@ API_PORT     ?= 8000
 API_URL      ?= http://host.docker.internal:$(API_PORT)
 FRONTEND_PORT ?= 8501
 MLFLOW_PORT  := 5000
+MLFLOW_TRACKING_URI ?= http://host.docker.internal:$(MLFLOW_PORT)
 C            ?= 1.0
 MAX_ITER     ?= 1000
 CV           ?= 5
@@ -117,8 +118,8 @@ train-optuna: ## Optimise RF / XGBoost / LightGBM avec Optuna (N_TRIALS=.. CV=..
 evaluate: ## Evalue le modele du registry + porte qualite (--no-validate pour desactiver)
 	$(PYTHON) -m mlproject.evaluate
 
-mlflow: ## Demarre le serveur MLflow (SQLite local)
-	$(RUN) mlflow server --backend-store-uri sqlite:///mlflow.db --host 127.0.0.1 --port $(MLFLOW_PORT)
+mlflow: ## Demarre le serveur MLflow (SQLite local, joignable depuis Docker via host.docker.internal)
+	$(RUN) mlflow server --backend-store-uri sqlite:///mlflow.db --host 0.0.0.0 --port $(MLFLOW_PORT) --allowed-hosts "*"
 
 api: ## Lance l'API FastAPI en rechargement auto (voir API_HOST/API_PORT)
 	$(RUN) uvicorn mlproject.api:app --reload --host $(API_HOST) --port $(API_PORT)
@@ -131,11 +132,15 @@ frontend: ## Lance le frontend Streamlit (voir FRONTEND_PORT, API_URL)
 # Docker  [A COMPLETER]
 # ==============================================================================
 
-docker-build: ## Construit l'image d'entrainement
-	# TODO (S8) : docker build -f docker/Dockerfile.train -t mlproject-train .
+docker-build: ## Construit l'image d'entrainement (docker/Dockerfile.train)
+	docker build -f docker/Dockerfile.train -t mlproject-train .
 
-docker-run: ## Lance l'entrainement en conteneur
-	# TODO (S8) : docker run --rm -v "$(CURDIR)/../models:/app/models" mlproject-train
+docker-run: ## Lance l'entrainement en conteneur (MLflow via MLFLOW_TRACKING_URI, CV=..)
+	docker run --rm -e MLFLOW_TRACKING_URI=$(MLFLOW_TRACKING_URI) \
+		--add-host=host.docker.internal:host-gateway \
+		--user "$(shell id -u):$(shell id -g)" \
+		-v "$(CURDIR)/data:/app/data:ro" -v "$(CURDIR)/models:/app/models" \
+		mlproject-train --cv $(CV)
 
 docker-up: ## Demarre la stack (mlflow, api, frontend)
 	# TODO (S14) : docker compose -f docker-compose.yml up -d --build mlflow api frontend
