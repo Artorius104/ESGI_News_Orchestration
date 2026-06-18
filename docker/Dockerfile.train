@@ -1,11 +1,16 @@
 # Image de production de l'entrainement (src/mlproject/train_models.py).
 # Le modele et les donnees ne sont pas embarques dans l'image : ils sont
-# montes en volume au runtime (donnees en lecture seule, modeles en ecriture).
+# montes en volume au runtime (donnees en lecture-ecriture pour permettre
+# aussi la preparation des donnees, modeles en ecriture).
 #
 # Build : docker build -f docker/Dockerfile.train -t mlproject-train .
 # Run   : docker run --rm -e MLFLOW_TRACKING_URI=http://localhost:5000 \
-#           -v "$PWD/data:/app/data:ro" -v "$PWD/models:/app/models" \
+#           -v "$PWD/data:/app/data" -v "$PWD/models:/app/models" \
 #           mlproject-train --cv 3
+#
+# Preparation des donnees (meme image, entrypoint different) :
+#   docker run --rm -v "$PWD/data:/app/data" --entrypoint python \
+#     mlproject-train scripts/prepare_data.py
 
 FROM python:3.13-slim
 ENV PYTHONUNBUFFERED=1 PYTHONPATH=/app/src
@@ -18,5 +23,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends libgomp1 \
 COPY pyproject.toml ./
 COPY src/ ./src/
 RUN pip install --no-cache-dir .
+COPY scripts/ ./scripts/
 
 ENTRYPOINT ["python", "-m", "mlproject.train_models"]

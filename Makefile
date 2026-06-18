@@ -39,6 +39,7 @@ RESET  := $(shell printf '\033[0m')
         data train train-models train-optuna evaluate mlflow api frontend \
         docker-build docker-run docker-up docker-down \
         docker-build-api docker-run-api docker-build-frontend docker-run-frontend \
+        airflow airflow-password \
         lint format type test check
 
 
@@ -142,11 +143,17 @@ docker-run: ## Lance l'entrainement en conteneur (MLflow via MLFLOW_TRACKING_URI
 		-v "$(CURDIR)/data:/app/data:ro" -v "$(CURDIR)/models:/app/models" \
 		mlproject-train --cv $(CV)
 
-docker-up: ## Demarre la stack (mlflow, api, frontend)
-	# TODO (S14) : docker compose -f docker-compose.yml up -d --build mlflow api frontend
+docker-up: ## Demarre la stack complete (mlflow, api, frontend, airflow)
+	docker compose up -d --build mlflow api frontend airflow
 
 docker-down: ## Arrete et supprime les conteneurs (conserve les volumes)
-	# TODO (S14) : docker compose -f docker-compose.yml down
+	docker compose down
+
+airflow: ## Demarre mlflow + airflow seuls (build local depuis docker/Dockerfile.airflow)
+	docker compose up -d --build mlflow airflow
+
+airflow-password: ## Affiche le mot de passe admin Airflow (genere au 1er demarrage standalone)
+	docker compose exec airflow cat /opt/airflow/standalone_admin_password.txt
 
 docker-build-api: ## Construit l'image de production de l'API (docker/Dockerfile.api)
 	docker build -f docker/Dockerfile.api -t mlproject-api .

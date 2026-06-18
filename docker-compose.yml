@@ -1,0 +1,92 @@
+# Stack de production : API, frontend, MLflow et Airflow.
+# api/frontend/train sont tirees de GHCR (publiees par la CD, voir
+# .github/workflows/ci.yml) ; airflow est buildee localement depuis
+# docker/Dockerfile.airflow (pas encore publiee sur GHCR).
+#
+# Variables a definir dans un fichier .env a la racine (voir tp/DEPLOIEMENT_VPS.md) :
+#   PUBLIC_HOST=<IP_PUBLIQUE_DU_VPS>   # utilisee pour les liens MLflow/Airflow du frontend
+#
+# Demarrage :
+#   docker compose up -d mlflow
+#   docker compose run --rm --entrypoint python train scripts/prepare_data.py
+#   docker compose run --rm train --cv 3       # premiere version du modele
+#   docker compose up -d api frontend airflow
+#
+# Arret : docker compose down (conserve les volumes) / docker compose down -v (efface tout)
+
+services:
+  mlflow:
+    image: ghcr.io/mlflow/mlflow:v3.13.0
+    command: >
+      mlflow server
+      --host 0.0.0.0 --port 5000
+      --backend-store-uri sqlite:////mlflow/mlflow.db
+      --artifacts-destination /mlflow/artifacts
+      --serve-artifacts
+      --allowed-hosts "*"
+    ports:
+      - "5000:5000"
+    volumes:
+      - mlflow_data:/mlflow
+    restart: unless-stopped
+
+  train:
+    image: ghcr.io/artorius104/esgi_news_orchestration-train:latest
+    environment:
+      MLFLOW_TRACKING_URI: http://mlflow:5000
+    depends_on:
+      - mlflow
+    volumes:
+      - ./data:/app/data
+      - models_data:/app/models
+    # Service one-shot (entrainement initial ou manuel) : ne demarre pas
+    # automatiquement avec `docker compose up`.
+    profiles:
+      - train
+
+  api:
+    image: ghcr.io/artorius104/esgi_news_orchestration-api:latest
+    ports:
+      - "8000:8000"
+    volumes:
+      - models_data:/app/models:ro
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request;urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  frontend:
+    image: ghcr.io/artorius104/esgi_news_orchestration-frontend:latest
+    environment:
+      API_URL: http://api:8000
+      MLFLOW_URL: http://${PUBLIC_HOST:-localhost}:5000
+      AIRFLOW_URL: http://${PUBLIC_HOST:-localhost}:8080
+    ports:
+      - "8501:8501"
+    depends_on:
+      api:
+        condition: service_healthy
+    restart: unless-stopped
+
+  airflow:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.airflow
+    ports:
+      - "8080:8080"
+    environment:
+      MLFLOW_TRACKING_URI: http://mlflow:5000
+    depends_on:
+      - mlflow
+    volumes:
+      - ./data:/opt/airflow/project/data
+      - models_data:/opt/airflow/project/models
+      - airflow_data:/opt/airflow
+    restart: unless-stopped
+
+volumes:
+  mlflow_data:
+  models_data:
+  airflow_data:

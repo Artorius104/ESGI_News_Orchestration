@@ -10,6 +10,8 @@ L'URL de l'API par defaut est lue depuis la variable d'environnement API_URL
 
 from __future__ import annotations
 
+import os
+
 import streamlit as st
 
 from theme import inject, register_altair_theme
@@ -17,6 +19,14 @@ from theme import inject, register_altair_theme
 st.set_page_config(page_title="AG News Intelligence", layout="wide", page_icon="📰")
 inject()
 register_altair_theme()
+
+MLFLOW_URL = os.environ.get("MLFLOW_URL", "http://127.0.0.1:5000")
+AIRFLOW_URL = os.environ.get("AIRFLOW_URL", "http://127.0.0.1:8080")
+
+with st.sidebar:
+    st.markdown("**Liens utiles**")
+    st.link_button("📈 Ouvrir MLflow", MLFLOW_URL, width="stretch")
+    st.link_button("🗓️ Ouvrir Airflow", AIRFLOW_URL, width="stretch")
 
 pages = [
     st.Page("pages/accueil.py", title="Accueil", icon="🏠", default=True),
