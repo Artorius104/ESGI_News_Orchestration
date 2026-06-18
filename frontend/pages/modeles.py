@@ -5,7 +5,7 @@ import pandas as pd
 import streamlit as st
 
 from api_client import get_api_url, get_confusion_matrix, get_models
-from theme import divider, kicker, note, subtitle
+from theme import METRIC_COLORS, TEXT_PRIMARY, divider, kicker, note, subtitle
 
 kicker("BANC D'ESSAI")
 st.title("Comparatif des modeles")
@@ -42,9 +42,10 @@ if models:
 
     with st.container(border=True):
         st.subheader("Scores par modele")
+        metric_cols = ["roc_auc", "f1", "cv_score"]
         df_long = df.melt(
             id_vars="name",
-            value_vars=["roc_auc", "f1", "cv_score"],
+            value_vars=metric_cols,
             var_name="Metrique",
             value_name="Score",
         )
@@ -54,7 +55,13 @@ if models:
             .encode(
                 x=alt.X("Score:Q", scale=alt.Scale(domain=[0, 1])),
                 y=alt.Y("name:N", title=None),
-                color=alt.Color("Metrique:N", legend=alt.Legend(orient="bottom", title=None)),
+                color=alt.Color(
+                    "Metrique:N",
+                    scale=alt.Scale(
+                        domain=metric_cols, range=[METRIC_COLORS[m] for m in metric_cols]
+                    ),
+                    legend=alt.Legend(orient="bottom", title=None),
+                ),
                 yOffset="Metrique:N",
                 tooltip=["name", "Metrique", alt.Tooltip("Score:Q", format=".3f")],
             )
@@ -97,7 +104,7 @@ if cm:
                 .encode(
                     x=alt.X("Predit:N", sort=labels, title="Classe predite"),
                     y=alt.Y("Reel:N", sort=labels, title="Classe reelle"),
-                    color=alt.Color("Count:Q", scale=alt.Scale(scheme="reds"), title="Articles"),
+                    color=alt.Color("Count:Q", scale=alt.Scale(scheme="purples"), title="Articles"),
                     tooltip=["Reel", "Predit", "Count"],
                 )
             )
@@ -109,7 +116,7 @@ if cm:
                     y=alt.Y("Reel:N", sort=labels),
                     text="Count:Q",
                     color=alt.condition(
-                        alt.datum.Count > max_count / 2, alt.value("white"), alt.value("#E8EAED")
+                        alt.datum.Count > max_count / 2, alt.value("white"), alt.value(TEXT_PRIMARY)
                     ),
                 )
             )
@@ -121,9 +128,10 @@ if cm:
             df_pc = (
                 pd.DataFrame(cm["per_class"]).T.reset_index().rename(columns={"index": "Classe"})
             )
+            pc_metric_cols = ["precision", "recall", "f1_score"]
             df_pc_long = df_pc.melt(
                 id_vars="Classe",
-                value_vars=["precision", "recall", "f1_score"],
+                value_vars=pc_metric_cols,
                 var_name="Metrique",
                 value_name="Score",
             )
@@ -133,7 +141,14 @@ if cm:
                 .encode(
                     x=alt.X("Score:Q", scale=alt.Scale(domain=[0, 1])),
                     y=alt.Y("Classe:N", title=None),
-                    color=alt.Color("Metrique:N", legend=alt.Legend(orient="bottom", title=None)),
+                    color=alt.Color(
+                        "Metrique:N",
+                        scale=alt.Scale(
+                            domain=pc_metric_cols,
+                            range=[METRIC_COLORS[m] for m in pc_metric_cols],
+                        ),
+                        legend=alt.Legend(orient="bottom", title=None),
+                    ),
                     yOffset="Metrique:N",
                     tooltip=["Classe", "Metrique", alt.Tooltip("Score:Q", format=".3f")],
                 )

@@ -5,15 +5,27 @@ import pandas as pd
 import streamlit as st
 
 from api_client import get_api_url, get_dataset_info
-from theme import LABEL_COLORS, divider, kicker, note, subtitle
+from theme import LABEL_COLORS, divider, feature_card, hero_title, kicker, note, subtitle
 
 kicker("PROJET FIL ROUGE · ESGI · ORCHESTRATION ML")
-st.title("Classification d'articles de presse — AG News")
+hero_title("Classifiez vos articles de presse avec une", "intelligence sur-mesure")
 subtitle(
     "Un modele de machine learning classe automatiquement chaque article dans l'une de "
     "4 rubriques — <b>World</b>, <b>Sports</b>, <b>Business</b>, <b>Sci/Tech</b> — a partir "
     "de son titre et de sa description, sans intervention humaine."
 )
+
+st.write("")
+c1, c2, c3, c4 = st.columns(4)
+with c1:
+    feature_card("🔍", "Analyse", "Teste le modele en direct sur un titre et une description.")
+with c2:
+    feature_card("📊", "Modeles", "Compare RF, XGBoost et LightGBM sur les memes donnees.")
+with c3:
+    feature_card("💡", "Explication", "Comprends les decisions du modele avec SHAP.")
+with c4:
+    feature_card("⚙️", "MLOps", "Pipeline CI/CD complet : MLflow, Docker, Airflow.")
+
 divider()
 
 api_url = get_api_url()

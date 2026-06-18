@@ -7,7 +7,7 @@ import streamlit as st
 from api_client import check_health, get_api_url, predict
 from examples import EXAMPLES
 from features import extract_features
-from theme import LABEL_COLORS, badge, divider, kicker, note, subtitle
+from theme import LABEL_COLORS, badge, colored_button_css, divider, kicker, note, subtitle
 
 kicker("ATELIER DE CLASSIFICATION")
 st.title("Analyse d'un article")
@@ -29,9 +29,13 @@ if "title_input" not in st.session_state:
 st.subheader("1. Choisis un exemple ou colle ton propre article")
 example_cols = st.columns(4)
 for col, label in zip(example_cols, EXAMPLES, strict=True):
-    if col.button(f"Exemple {label}", width="stretch"):
-        st.session_state.title_input = EXAMPLES[label]["title"]
-        st.session_state.desc_input = EXAMPLES[label]["description"]
+    slug = "ex-" + label.lower().replace("/", "")
+    with col:
+        colored_button_css(slug, LABEL_COLORS[label])
+        with st.container(key=slug):
+            if st.button(f"Exemple {label}", width="stretch"):
+                st.session_state.title_input = EXAMPLES[label]["title"]
+                st.session_state.desc_input = EXAMPLES[label]["description"]
 
 title = st.text_input("Titre", key="title_input")
 description = st.text_area("Description", key="desc_input", height=120)
