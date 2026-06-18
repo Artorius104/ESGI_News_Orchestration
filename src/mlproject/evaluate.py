@@ -10,6 +10,7 @@ Lancement :
     python -m mlproject.evaluate --no-validate
     EVAL_ROC_AUC_MIN=0.99 python -m mlproject.evaluate   # force l'echec
 """
+
 from __future__ import annotations
 
 import argparse
@@ -63,7 +64,9 @@ def evaluate_model(model_uri: str | None = None, validate: bool = True):
     logger.info("Evaluation de %s", model_uri)
 
     with mlflow.start_run(run_name="evaluate"):
-        dataset = mlflow.data.from_pandas(eval_df, source=str(TEST_PATH), targets=TARGET, name="eval")
+        dataset = mlflow.data.from_pandas(  # type: ignore[attr-defined]
+            eval_df, source=str(TEST_PATH), targets=TARGET, name="eval"
+        )
         mlflow.log_input(dataset, context="evaluation")
 
         result = mlflow.models.evaluate(

@@ -14,6 +14,6 @@ def split(
 ) -> tuple[pd.DataFrame, pd.DataFrame, pd.Series, pd.Series]:
     X_train = train_df.drop(columns=[TARGET])
     y_train = train_df[TARGET]
-    X_test  = test_df.drop(columns=[TARGET])
-    y_test  = test_df[TARGET]
+    X_test = test_df.drop(columns=[TARGET])
+    y_test = test_df[TARGET]
     return X_train, X_test, y_train, y_test

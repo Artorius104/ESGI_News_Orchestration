@@ -9,6 +9,7 @@ Lancement :
     python -m mlproject.train_models --cv 3 --scoring roc_auc_ovr
     python -m mlproject.train_models --no-mlflow
 """
+
 from __future__ import annotations
 
 import argparse
@@ -46,7 +47,9 @@ from mlproject.tracking import log_dataset, setup_experiment
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 logger = logging.getLogger(__name__)
 
-warnings.filterwarnings("ignore", message="X does not have valid feature names", category=UserWarning)
+warnings.filterwarnings(
+    "ignore", message="X does not have valid feature names", category=UserWarning
+)
 
 
 @dataclass
@@ -149,11 +152,13 @@ def log_run_to_mlflow(
         mlflow.log_param("cv", cv)
         mlflow.log_param("scoring", scoring)
         mlflow.log_params(result.best_params)
-        mlflow.log_metrics({
-            f"cv_{scoring}": result.cv_score,
-            "f1": result.f1,
-            "roc_auc": result.roc_auc,
-        })
+        mlflow.log_metrics(
+            {
+                f"cv_{scoring}": result.cv_score,
+                "f1": result.f1,
+                "roc_auc": result.roc_auc,
+            }
+        )
 
         cm = confusion_matrix(y_test, result.preds)
         fig, ax = plt.subplots(figsize=(5, 5))

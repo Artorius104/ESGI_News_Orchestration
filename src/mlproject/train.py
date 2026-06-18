@@ -19,10 +19,12 @@ def train(c: float = 1.0, max_iter: int = 1000) -> dict[str, float]:
     train_df, test_df = load_data()
     X_train, X_test, y_train, y_test = split(train_df, test_df)
 
-    model = Pipeline([
-        ("preprocessor", build_preprocessor()),
-        ("clf", LogisticRegression(C=c, max_iter=max_iter)),
-    ])
+    model = Pipeline(
+        [
+            ("preprocessor", build_preprocessor()),
+            ("clf", LogisticRegression(C=c, max_iter=max_iter)),
+        ]
+    )
 
     setup_experiment()
 
@@ -44,7 +46,8 @@ def train(c: float = 1.0, max_iter: int = 1000) -> dict[str, float]:
 
         fig, ax = plt.subplots(figsize=(6, 5))
         ConfusionMatrixDisplay.from_predictions(
-            y_test, y_pred,
+            y_test,
+            y_pred,
             display_labels=["World", "Sports", "Business", "Sci/Tech"],
             ax=ax,
         )

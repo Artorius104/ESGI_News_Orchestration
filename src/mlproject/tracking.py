@@ -3,6 +3,7 @@
 Centralise tracking URI + expérience pour éviter la duplication dans chaque
 script, et ajoute la traçabilité des données (dataset lineage).
 """
+
 from __future__ import annotations
 
 import logging
@@ -43,7 +44,9 @@ def setup_experiment() -> None:
     logger.info("MLflow experiment : %s (%s)", MLFLOW_EXPERIMENT, MLFLOW_TRACKING_URI)
 
 
-def log_dataset(df: pd.DataFrame, context: str, name: str = "dataset", source: Path | str | None = None) -> None:
+def log_dataset(
+    df: pd.DataFrame, context: str, name: str = "dataset", source: Path | str | None = None
+) -> None:
     """Logger un dataset MLflow dans le run courant (S5-9).
 
     Parameters
@@ -58,5 +61,5 @@ def log_dataset(df: pd.DataFrame, context: str, name: str = "dataset", source: P
         Chemin source du fichier CSV. Par défaut TRAIN_PATH.
     """
     src = str(source) if source is not None else str(TRAIN_PATH)
-    dataset = mlflow.data.from_pandas(df, source=src, targets=TARGET, name=name)
+    dataset = mlflow.data.from_pandas(df, source=src, targets=TARGET, name=name)  # type: ignore[attr-defined]
     mlflow.log_input(dataset, context=context)

@@ -9,8 +9,8 @@ ROOT = Path(__file__).resolve().parents[2]
 load_dotenv(ROOT / ".env")
 
 TRAIN_PATH = ROOT / "data" / "train_features.csv"
-TEST_PATH  = ROOT / "data" / "test_features.csv"
-MODEL_DIR  = ROOT / "models"
+TEST_PATH = ROOT / "data" / "test_features.csv"
+MODEL_DIR = ROOT / "models"
 
 TARGET = "label"
 
@@ -53,7 +53,9 @@ def _parse_tags(raw: str) -> dict[str, str]:
     return tags
 
 
-MLFLOW_EXPERIMENT_TAGS = _parse_tags(os.getenv("MLFLOW_EXPERIMENT_TAGS", "course=mlops,dataset=ag-news"))
+MLFLOW_EXPERIMENT_TAGS = _parse_tags(
+    os.getenv("MLFLOW_EXPERIMENT_TAGS", "course=mlops,dataset=ag-news")
+)
 
 EVAL_ROC_AUC_MIN = float(os.getenv("EVAL_ROC_AUC_MIN", "0.90"))
 EVAL_F1_MIN = float(os.getenv("EVAL_F1_MIN", "0.85"))

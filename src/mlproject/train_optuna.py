@@ -8,6 +8,7 @@ Lancement :
     python -m mlproject.train_optuna --n-trials 50 --cv 3
     python -m mlproject.train_optuna --no-mlflow
 """
+
 from __future__ import annotations
 
 import argparse
