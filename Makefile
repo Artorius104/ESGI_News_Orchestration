@@ -15,6 +15,7 @@ PYTHONPATH   ?= src
 export PYTHONPATH
 API_HOST     ?= 127.0.0.1
 API_PORT     ?= 8000
+API_URL      ?= http://host.docker.internal:$(API_PORT)
 FRONTEND_PORT ?= 8501
 MLFLOW_PORT  := 5000
 C            ?= 1.0
@@ -36,6 +37,7 @@ RESET  := $(shell printf '\033[0m')
         check-uv check-venv venv-create install sync deps-sync lock reset-env doctor \
         data train train-models train-optuna evaluate mlflow api frontend \
         docker-build docker-run docker-up docker-down \
+        docker-build-api docker-run-api docker-build-frontend docker-run-frontend \
         lint format type test check
 
 
@@ -141,21 +143,33 @@ docker-up: ## Demarre la stack (mlflow, api, frontend)
 docker-down: ## Arrete et supprime les conteneurs (conserve les volumes)
 	# TODO (S14) : docker compose -f docker-compose.yml down
 
+docker-build-api: ## Construit l'image de production de l'API (docker/Dockerfile.api)
+	docker build -f docker/Dockerfile.api -t mlproject-api .
+
+docker-run-api: ## Lance l'API en conteneur (modele monte en lecture seule depuis models/)
+	docker run --rm -p $(API_PORT):8000 -v "$(CURDIR)/models:/app/models:ro" --name mlproject-api mlproject-api
+
+docker-build-frontend: ## Construit l'image de production du frontend (docker/Dockerfile.frontend)
+	docker build -f docker/Dockerfile.frontend -t mlproject-frontend .
+
+docker-run-frontend: ## Lance le frontend en conteneur (voir API_URL, defaut: host.docker.internal)
+	docker run --rm -p $(FRONTEND_PORT):8501 -e API_URL=$(API_URL) --add-host=host.docker.internal:host-gateway --name mlproject-frontend mlproject-frontend
+
 
 # ==============================================================================
 # Qualite  [A COMPLETER]
 # ==============================================================================
 
 lint: ## Verifie le style (ruff)
-	# TODO : $(RUN) ruff check mlproject
+	$(RUN) ruff check src/ frontend/
 
 format: ## Formate le code (ruff)
-	# TODO : $(RUN) ruff format mlproject
+	$(RUN) ruff format src/ frontend/
 
 type: ## Verifie les types (mypy)
-	# TODO : $(RUN) mypy mlproject
+	$(RUN) mypy src/mlproject
 
 test: ## Lance les tests (pytest)
-	# TODO : $(RUN) pytest
+	$(RUN) pytest
 
 check: lint type test ## Workflow qualite complet (lint + types + tests)
