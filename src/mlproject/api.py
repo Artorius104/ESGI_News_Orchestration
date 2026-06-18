@@ -27,6 +27,7 @@ logger = logging.getLogger(__name__)
 MODEL_COMPARISON_PATH = MODEL_DIR / "model_comparison.json"
 SHAP_SUMMARY_PATH = MODEL_DIR / "shap_summary.png"
 DATASET_INFO_PATH = MODEL_DIR / "dataset_info.json"
+CONFUSION_MATRIX_PATH = MODEL_DIR / "confusion_matrix.json"
 
 ml: dict = {}
 
@@ -129,3 +130,10 @@ def dataset_info() -> dict:
     if not DATASET_INFO_PATH.exists():
         raise HTTPException(status_code=404, detail="Informations dataset indisponibles")
     return json.loads(DATASET_INFO_PATH.read_text())
+
+
+@app.get("/confusion-matrix")
+def confusion_matrix_info() -> dict:
+    if not CONFUSION_MATRIX_PATH.exists():
+        raise HTTPException(status_code=404, detail="Matrice de confusion indisponible")
+    return json.loads(CONFUSION_MATRIX_PATH.read_text())

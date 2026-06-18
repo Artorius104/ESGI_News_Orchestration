@@ -290,6 +290,28 @@ def train_all(
 
     save_shap_summary(best.best_estimator, x_test, best.name, MODEL_DIR / "shap_summary.png")
 
+    per_class_report = cast(
+        dict,
+        classification_report(
+            y_test, best.preds, target_names=LABEL_NAMES, output_dict=True, zero_division=0
+        ),
+    )
+    confusion = {
+        "model_name": best.name,
+        "labels": LABEL_NAMES,
+        "matrix": confusion_matrix(y_test, best.preds).tolist(),
+        "per_class": {
+            label: {
+                "precision": per_class_report[label]["precision"],
+                "recall": per_class_report[label]["recall"],
+                "f1_score": per_class_report[label]["f1-score"],
+                "support": int(per_class_report[label]["support"]),
+            }
+            for label in LABEL_NAMES
+        },
+    }
+    (MODEL_DIR / "confusion_matrix.json").write_text(json.dumps(confusion, indent=2))
+
     dataset_info = {
         "n_train": len(train_df),
         "n_test": len(test_df),

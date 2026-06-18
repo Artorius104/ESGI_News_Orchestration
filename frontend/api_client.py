@@ -49,3 +49,9 @@ def get_shap_summary_bytes(api_url: str) -> bytes:
     response = httpx.get(f"{api_url}/shap-summary", timeout=10.0)
     response.raise_for_status()
     return response.content
+
+
+def get_confusion_matrix(api_url: str) -> dict:
+    response = httpx.get(f"{api_url}/confusion-matrix", timeout=10.0)
+    response.raise_for_status()
+    return response.json()

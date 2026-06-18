@@ -80,6 +80,7 @@ jobs:
             models/model_comparison.json
             models/shap_summary.png
             models/dataset_info.json
+            models/confusion_matrix.json
           retention-days: 7
 
   cd:
@@ -120,6 +121,7 @@ jobs:
           curl -sf http://127.0.0.1:8000/health
           curl -sf http://127.0.0.1:8000/models
           curl -sf http://127.0.0.1:8000/dataset-info
+          curl -sf http://127.0.0.1:8000/confusion-matrix
           curl -sf -o /dev/null -w "%{http_code}" http://127.0.0.1:8000/shap-summary
           docker logs api-smoke
           docker rm -f api-smoke

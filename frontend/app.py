@@ -12,7 +12,11 @@ from __future__ import annotations
 
 import streamlit as st
 
-st.set_page_config(page_title="Classification AG News", layout="wide", page_icon="📰")
+from theme import inject, register_altair_theme
+
+st.set_page_config(page_title="AG News Intelligence", layout="wide", page_icon="📰")
+inject()
+register_altair_theme()
 
 pages = [
     st.Page("pages/accueil.py", title="Accueil", icon="🏠", default=True),

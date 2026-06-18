@@ -98,3 +98,19 @@ def test_shap_summary(client):
     assert response.status_code == 200
     assert response.headers["content-type"] == "image/png"
     assert response.content[:8] == b"\x89PNG\r\n\x1a\n"
+
+
+def test_confusion_matrix(client):
+    response = client.get("/confusion-matrix")
+    assert response.status_code == 200
+
+    body = response.json()
+    assert body["labels"] == ["World", "Sports", "Business", "Sci/Tech"]
+    assert len(body["matrix"]) == 4
+    assert all(len(row) == 4 for row in body["matrix"])
+    assert set(body["per_class"].keys()) == {"World", "Sports", "Business", "Sci/Tech"}
+    for entry in body["per_class"].values():
+        assert 0.0 <= entry["precision"] <= 1.0
+        assert 0.0 <= entry["recall"] <= 1.0
+        assert 0.0 <= entry["f1_score"] <= 1.0
+        assert entry["support"] > 0

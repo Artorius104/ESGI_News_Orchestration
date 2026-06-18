@@ -1,19 +1,18 @@
 from __future__ import annotations
 
+import altair as alt
+import pandas as pd
 import streamlit as st
 
 from api_client import check_health, get_api_url, predict
 from examples import EXAMPLES
 from features import extract_features
+from theme import LABEL_COLORS, badge, divider, kicker, note, subtitle
 
-LABEL_COLORS = {
-    "World": "#1f77b4",
-    "Sports": "#2ca02c",
-    "Business": "#9467bd",
-    "Sci/Tech": "#ff7f0e",
-}
-
-st.title("🔍 Analyse d'un article")
+kicker("ATELIER DE CLASSIFICATION")
+st.title("Analyse d'un article")
+subtitle("Colle un titre et une description, ou pars d'un exemple, pour interroger le modele.")
+divider()
 
 api_url = st.text_input("URL de l'API", value=get_api_url(), key="api_url")
 
@@ -51,24 +50,69 @@ if st.button("🚀 Analyser et predire", type="primary", width="stretch"):
         else:
             label = result["label"]
             color = LABEL_COLORS.get(label, "#888888")
-            st.markdown(
-                f"<div style='background-color:{color}22;border-left:6px solid {color};"
-                f"padding:1rem;border-radius:0.5rem;'>"
-                f"<span style='font-size:1.5rem;font-weight:bold;color:{color};'>"
-                f"📰 Classe predite : {label}</span></div>",
-                unsafe_allow_html=True,
-            )
 
             st.write("")
+            badge(f"📰 {label}", color)
+            st.write("")
+
             col1, col2 = st.columns(2)
             col1.metric("Classe predite", label)
             col2.metric("Probabilite", f"{result['probability']:.1%}")
 
-            st.markdown("**Confiance du modele**")
-            st.progress(result["probability"])
+            probs = sorted(
+                zip(EXAMPLES.keys(), result["probabilities"], strict=True),
+                key=lambda kv: kv[1],
+                reverse=True,
+            )
+            top_label, top_prob = probs[0]
+            runner_label, runner_prob = probs[1]
+            gap = top_prob - runner_prob
+            if gap > 0.3:
+                note(
+                    f"✅ Le modele est **tres confiant** : {top_label} devance {runner_label} "
+                    f"de {gap:.0%} de probabilite."
+                )
+            elif gap > 0.1:
+                note(
+                    f"🔹 Confiance moderee : {top_label} l'emporte sur {runner_label}, "
+                    f"mais l'ecart reste resserre ({gap:.0%})."
+                )
+            else:
+                note(
+                    f"⚠️ Le modele **hesite** entre {top_label} et {runner_label} "
+                    f"(ecart de seulement {gap:.0%})."
+                )
 
-            st.markdown("**Probabilites par classe**")
-            st.bar_chart(dict(zip(EXAMPLES.keys(), result["probabilities"], strict=True)))
+            with st.container(border=True):
+                st.markdown("**Probabilites par classe**")
+                df_probs = pd.DataFrame(
+                    {
+                        "Classe": list(EXAMPLES.keys()),
+                        "Probabilite": result["probabilities"],
+                    }
+                )
+                chart = (
+                    alt.Chart(df_probs)
+                    .mark_bar(cornerRadiusEnd=4)
+                    .encode(
+                        x=alt.X("Probabilite:Q", title="Probabilite", axis=alt.Axis(format="%")),
+                        y=alt.Y("Classe:N", sort="-x", title=None),
+                        color=alt.Color(
+                            "Classe:N",
+                            scale=alt.Scale(
+                                domain=list(LABEL_COLORS.keys()),
+                                range=list(LABEL_COLORS.values()),
+                            ),
+                            legend=None,
+                        ),
+                        tooltip=[
+                            "Classe",
+                            alt.Tooltip("Probabilite:Q", format=".1%"),
+                        ],
+                    )
+                    .properties(height=200)
+                )
+                st.altair_chart(chart, width="stretch")
 
             with st.expander("🛠️ Reponse brute de l'API — POST /predict"):
                 st.json(result)
