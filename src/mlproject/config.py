@@ -64,3 +64,5 @@ API_URL = os.getenv("API_URL", "http://127.0.0.1:8000")
 
 N_CLASSES = 4
 SCORING = "roc_auc_ovr"
+
+LABEL_NAMES = ["World", "Sports", "Business", "Sci/Tech"]

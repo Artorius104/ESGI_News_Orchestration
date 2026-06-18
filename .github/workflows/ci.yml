@@ -23,10 +23,10 @@ jobs:
         run: uv sync --extra dev
 
       - name: Lint (ruff check)
-        run: uv run ruff check src/
+        run: uv run ruff check src/ frontend/
 
       - name: Format (ruff format --check)
-        run: uv run ruff format --check src/
+        run: uv run ruff format --check src/ frontend/
 
       - name: Type check (mypy)
         run: uv run mypy src/mlproject
@@ -40,11 +40,15 @@ jobs:
       - name: Tests (pytest)
         run: PYTHONPATH=src uv run pytest
 
-      - name: Upload model artifact
+      - name: Upload model artifacts
         uses: actions/upload-artifact@v4
         with:
           name: model
-          path: models/model.joblib
+          path: |
+            models/model.joblib
+            models/model_comparison.json
+            models/shap_summary.png
+            models/dataset_info.json
           retention-days: 7
 
   cd:
@@ -63,15 +67,17 @@ jobs:
           name: model
           path: models
 
-      - name: Compute lowercase image name
-        run: echo "IMAGE_NAME=$(echo '${{ github.repository }}-api' | tr '[:upper:]' '[:lower:]')" >> "$GITHUB_ENV"
+      - name: Compute lowercase image names
+        run: |
+          echo "IMAGE_NAME_API=$(echo '${{ github.repository }}-api' | tr '[:upper:]' '[:lower:]')" >> "$GITHUB_ENV"
+          echo "IMAGE_NAME_FRONTEND=$(echo '${{ github.repository }}-frontend' | tr '[:upper:]' '[:lower:]')" >> "$GITHUB_ENV"
 
       - name: Build API image
-        run: docker build -f docker/Dockerfile.api -t "$IMAGE_NAME:smoke" .
+        run: docker build -f docker/Dockerfile.api -t "$IMAGE_NAME_API:smoke" .
 
-      - name: Smoke test container
+      - name: Smoke test API container
         run: |
-          docker run -d --name api-smoke -p 8000:8000 -v "$PWD/models:/app/models:ro" "$IMAGE_NAME:smoke"
+          docker run -d --name api-smoke -p 8000:8000 -v "$PWD/models:/app/models:ro" "$IMAGE_NAME_API:smoke"
           for i in $(seq 1 15); do
             if curl -sf http://127.0.0.1:8000/health; then
               echo "API healthy"
@@ -80,8 +86,28 @@ jobs:
             sleep 2
           done
           curl -sf http://127.0.0.1:8000/health
+          curl -sf http://127.0.0.1:8000/models
+          curl -sf http://127.0.0.1:8000/dataset-info
+          curl -sf -o /dev/null -w "%{http_code}" http://127.0.0.1:8000/shap-summary
           docker logs api-smoke
           docker rm -f api-smoke
+
+      - name: Build frontend image
+        run: docker build -f docker/Dockerfile.frontend -t "$IMAGE_NAME_FRONTEND:smoke" .
+
+      - name: Smoke test frontend container
+        run: |
+          docker run -d --name frontend-smoke -p 8501:8501 "$IMAGE_NAME_FRONTEND:smoke"
+          for i in $(seq 1 15); do
+            if curl -sf http://127.0.0.1:8501/_stcore/health; then
+              echo "Frontend healthy"
+              break
+            fi
+            sleep 2
+          done
+          curl -sf http://127.0.0.1:8501/_stcore/health
+          docker logs frontend-smoke
+          docker rm -f frontend-smoke
 
       - name: Log in to GHCR
         uses: docker/login-action@v3
@@ -90,9 +116,14 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Tag and push image
+      - name: Tag and push images
         run: |
-          docker tag "$IMAGE_NAME:smoke" "ghcr.io/$IMAGE_NAME:latest"
-          docker tag "$IMAGE_NAME:smoke" "ghcr.io/$IMAGE_NAME:${{ github.sha }}"
-          docker push "ghcr.io/$IMAGE_NAME:latest"
-          docker push "ghcr.io/$IMAGE_NAME:${{ github.sha }}"
+          docker tag "$IMAGE_NAME_API:smoke" "ghcr.io/$IMAGE_NAME_API:latest"
+          docker tag "$IMAGE_NAME_API:smoke" "ghcr.io/$IMAGE_NAME_API:${{ github.sha }}"
+          docker push "ghcr.io/$IMAGE_NAME_API:latest"
+          docker push "ghcr.io/$IMAGE_NAME_API:${{ github.sha }}"
+
+          docker tag "$IMAGE_NAME_FRONTEND:smoke" "ghcr.io/$IMAGE_NAME_FRONTEND:latest"
+          docker tag "$IMAGE_NAME_FRONTEND:smoke" "ghcr.io/$IMAGE_NAME_FRONTEND:${{ github.sha }}"
+          docker push "ghcr.io/$IMAGE_NAME_FRONTEND:latest"
+          docker push "ghcr.io/$IMAGE_NAME_FRONTEND:${{ github.sha }}"

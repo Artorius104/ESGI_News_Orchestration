@@ -13,6 +13,7 @@ Lancement :
 from __future__ import annotations
 
 import argparse
+import json
 import logging
 import warnings
 from dataclasses import dataclass
@@ -38,9 +39,19 @@ from sklearn.model_selection import GridSearchCV
 from sklearn.pipeline import Pipeline
 from xgboost import XGBClassifier
 
-from mlproject.config import MODEL_DIR, MODEL_NAME, RANDOM_STATE, SCORING, TEST_PATH, TRAIN_PATH
+from mlproject.config import (
+    LABEL_NAMES,
+    MODEL_DIR,
+    MODEL_NAME,
+    NUMERIC_FEATURES,
+    RANDOM_STATE,
+    SCORING,
+    TARGET,
+    TEST_PATH,
+    TRAIN_PATH,
+)
 from mlproject.data import load_data, split
-from mlproject.evaluation import log_shap_summary
+from mlproject.evaluation import log_shap_summary, save_shap_summary
 from mlproject.features import build_preprocessor
 from mlproject.tracking import log_dataset, setup_experiment
 
@@ -254,6 +265,33 @@ def train_all(
     MODEL_DIR.mkdir(parents=True, exist_ok=True)
     joblib.dump(best.best_estimator, MODEL_DIR / "model.joblib")
     logger.info("Modele sauvegarde dans %s", MODEL_DIR / "model.joblib")
+
+    comparison = [
+        {
+            "name": r.name,
+            "f1": r.f1,
+            "roc_auc": r.roc_auc,
+            "cv_score": r.cv_score,
+            "best_params": r.best_params,
+            "is_best": r is best,
+        }
+        for r in results
+    ]
+    (MODEL_DIR / "model_comparison.json").write_text(json.dumps(comparison, indent=2))
+
+    save_shap_summary(best.best_estimator, x_test, best.name, MODEL_DIR / "shap_summary.png")
+
+    dataset_info = {
+        "n_train": len(train_df),
+        "n_test": len(test_df),
+        "class_distribution": {
+            LABEL_NAMES[label]: int(count)
+            for label, count in train_df[TARGET].value_counts().sort_index().items()
+        },
+        "features": NUMERIC_FEATURES,
+        "label_names": LABEL_NAMES,
+    }
+    (MODEL_DIR / "dataset_info.json").write_text(json.dumps(dataset_info, indent=2))
 
     return results
 

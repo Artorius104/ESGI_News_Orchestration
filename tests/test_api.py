@@ -66,3 +66,35 @@ def test_predict_negative_count(client):
     payload["title_word_count"] = -1
     response = client.post("/predict", json=payload)
     assert response.status_code == 422
+
+
+def test_models_comparison(client):
+    response = client.get("/models")
+    assert response.status_code == 200
+
+    body = response.json()
+    assert len(body) == 3
+    assert sum(entry["is_best"] for entry in body) == 1
+    for entry in body:
+        assert entry["name"] in ["random_forest", "xgboost", "lightgbm"]
+        assert 0.0 <= entry["f1"] <= 1.0
+        assert 0.0 <= entry["roc_auc"] <= 1.0
+
+
+def test_dataset_info(client):
+    response = client.get("/dataset-info")
+    assert response.status_code == 200
+
+    body = response.json()
+    assert body["n_train"] > 0
+    assert body["n_test"] > 0
+    assert set(body["class_distribution"].keys()) == {"World", "Sports", "Business", "Sci/Tech"}
+    assert body["features"] == list(VALID_PAYLOAD.keys())
+    assert body["label_names"] == ["World", "Sports", "Business", "Sci/Tech"]
+
+
+def test_shap_summary(client):
+    response = client.get("/shap-summary")
+    assert response.status_code == 200
+    assert response.headers["content-type"] == "image/png"
+    assert response.content[:8] == b"\x89PNG\r\n\x1a\n"

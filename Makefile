@@ -122,7 +122,7 @@ api: ## Lance l'API FastAPI en rechargement auto (voir API_HOST/API_PORT)
 	$(RUN) uvicorn mlproject.api:app --reload --host $(API_HOST) --port $(API_PORT)
 
 frontend: ## Lance le frontend Streamlit (voir FRONTEND_PORT, API_URL)
-	# TODO (S14bis) : $(RUN) streamlit run frontend/app.py --server.port $(FRONTEND_PORT)
+	$(RUN) streamlit run frontend/app.py --server.port $(FRONTEND_PORT)
 
 
 # ==============================================================================

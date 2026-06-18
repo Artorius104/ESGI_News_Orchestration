@@ -7,6 +7,7 @@ Lancement :
 
 from __future__ import annotations
 
+import json
 import logging
 import os
 from contextlib import asynccontextmanager
@@ -15,14 +16,17 @@ from typing import AsyncIterator
 import joblib
 import pandas as pd
 from fastapi import FastAPI, HTTPException
+from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
 
-from mlproject.config import MODEL_DIR
+from mlproject.config import LABEL_NAMES, MODEL_DIR
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 logger = logging.getLogger(__name__)
 
-LABEL_NAMES = ["World", "Sports", "Business", "Sci/Tech"]
+MODEL_COMPARISON_PATH = MODEL_DIR / "model_comparison.json"
+SHAP_SUMMARY_PATH = MODEL_DIR / "shap_summary.png"
+DATASET_INFO_PATH = MODEL_DIR / "dataset_info.json"
 
 ml: dict = {}
 
@@ -104,3 +108,24 @@ def predict(features: Features) -> PredictionOut:
 @app.get("/model-info")
 def model_info() -> dict:
     return {"version": os.environ.get("MODEL_VERSION", "unknown")}
+
+
+@app.get("/models")
+def models_comparison() -> list[dict]:
+    if not MODEL_COMPARISON_PATH.exists():
+        raise HTTPException(status_code=404, detail="Comparatif des modeles indisponible")
+    return json.loads(MODEL_COMPARISON_PATH.read_text())
+
+
+@app.get("/shap-summary")
+def shap_summary() -> FileResponse:
+    if not SHAP_SUMMARY_PATH.exists():
+        raise HTTPException(status_code=404, detail="Graphique SHAP indisponible")
+    return FileResponse(SHAP_SUMMARY_PATH, media_type="image/png")
+
+
+@app.get("/dataset-info")
+def dataset_info() -> dict:
+    if not DATASET_INFO_PATH.exists():
+        raise HTTPException(status_code=404, detail="Informations dataset indisponibles")
+    return json.loads(DATASET_INFO_PATH.read_text())

@@ -40,9 +40,11 @@ packages = ["src/mlproject"]
 [tool.ruff]
 line-length = 100
 target-version = "py313"
+src = ["src", "frontend"]
 
 [tool.mypy]
 python_version = "3.13"
+mypy_path = "src"
 
 # Le stack scientifique ne fournit pas de stubs de types : on ignore les
 # imports non types pour ces librairies, tout en gardant mypy strict sur src/.
